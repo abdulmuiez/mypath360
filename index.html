@@ -127,7 +127,7 @@ img{display:block;max-width:100%}
 .section-head p{margin:0;color:var(--muted);line-height:1.7}
 
 .digital-grid{
-  display:grid;grid-template-columns:repeat(3,1fr);gap:18px;
+  display:grid;grid-template-columns:repeat(4,1fr);gap:18px;
   margin-bottom:22px;
 }
 .card{
@@ -149,6 +149,7 @@ img{display:block;max-width:100%}
 .card p{position:relative;z-index:1;margin:0;color:var(--muted);font-size:14.5px;line-height:1.65}
 .go{position:absolute;left:23px;bottom:20px;font-weight:900;font-size:14px;color:var(--accent)}
 .stem{--soft:#e8f4ff;--accent:#087ed0}
+.target{--soft:#f1ecff;--accent:#7657d6}
 .merit{--soft:#fff3df;--accent:#df8c00}
 .upu{--soft:#e9f9f7;--accent:#119589}
 
@@ -178,6 +179,10 @@ img{display:block;max-width:100%}
 
 footer{border-top:1px solid var(--line);background:#fff;padding:24px 0;color:var(--muted);font-size:14px}
 .foot{display:flex;justify-content:space-between;gap:14px;flex-wrap:wrap}
+
+@media(max-width:1100px){
+  .digital-grid{grid-template-columns:repeat(2,1fr)}
+}
 
 @media(max-width:900px){
   .hero{grid-template-columns:1fr}
@@ -237,7 +242,7 @@ footer{border-top:1px solid var(--line);background:#fff;padding:24px 0;color:var
   <div class="container">
     <div class="section-head">
       <h2>Teroka MyPath360</h2>
-      <p>Tiga alat digital utama dan dua bahan fizikal dalam satu ekosistem bimbingan hala tuju.</p>
+      <p>Empat alat digital utama dan dua bahan fizikal dalam satu ekosistem bimbingan hala tuju.</p>
     </div>
 
     <div class="digital-grid">
@@ -246,6 +251,13 @@ footer{border-top:1px solid var(--line);background:#fff;padding:24px 0;color:var
         <h3>STEMMatch</h3>
         <p>Membantu murid meneroka kesesuaian dan potensi mereka dalam bidang STEM.</p>
         <div class="go">Buka STEMMatch →</div>
+      </a>
+
+      <a class="card target" href="https://emytargetgpd.netlify.app/" target="_blank" rel="noopener">
+        <div class="icon">📈</div>
+        <h3>eMyTarget Graf Prestasi Diri</h3>
+        <p>Visualisasikan prestasi akademik, kenal pasti kekuatan dan ruang penambahbaikan serta tetapkan sasaran pencapaian dengan lebih jelas.</p>
+        <div class="go">Buka eMyTarget →</div>
       </a>
 
       <a class="card merit" href="https://merit.cikgumuiez.com/" target="_blank" rel="noopener">
