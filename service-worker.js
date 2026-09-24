@@ -1,4 +1,4 @@
-const CACHE_NAME = 'mypath360-pwa-v1';
+const CACHE_NAME = 'mypath360-pwa-v3';
 const APP_SHELL = [
   './',
   './index.html',
