@@ -193,6 +193,108 @@ footer{border-top:1px solid var(--line);background:#fff;padding:24px 0;color:var
   .hero{padding:20px}
   .top-btn{display:none}
 }
+
+/* Shared CikguMuiez visitor statistics - read only */
+.mypath-shared-stats{
+  width:100%;
+  margin-top:16px;
+  padding:12px 14px;
+  border-radius:16px;
+  background:#10254f;
+  color:#d6e0f6;
+  display:flex;
+  flex-wrap:wrap;
+  align-items:center;
+  justify-content:flex-end;
+  gap:8px;
+  box-shadow:0 10px 24px rgba(16,37,79,.12);
+}
+.mypath-shared-stats .stats-label{
+  color:#f4c430;
+  font-size:12px;
+  font-weight:900;
+  letter-spacing:.08em;
+  text-transform:uppercase;
+  margin-right:2px;
+}
+.mypath-shared-stats .stats-pill{
+  display:inline-flex;
+  align-items:center;
+  gap:6px;
+  min-height:30px;
+  padding:0 10px;
+  border-radius:999px;
+  background:rgba(255,255,255,.08);
+  border:1px solid rgba(255,255,255,.12);
+  color:#d6e0f6;
+  font-size:12px;
+  white-space:nowrap;
+}
+.mypath-shared-stats .stats-pill strong{
+  color:#fff;
+  font-size:13px;
+  font-weight:900;
+}
+.mypath-shared-stats .stats-note{
+  flex-basis:100%;
+  color:#9eabc4;
+  font-size:11px;
+  text-align:right;
+  margin-top:1px;
+}
+@media(max-width:620px){
+  .mypath-shared-stats{justify-content:flex-start}
+  .mypath-shared-stats .stats-note{text-align:left}
+}
+
+
+/* Floating live chat launcher - shared across CikguMuiez & MyPath360 */
+.cm-chat-launcher {
+  position: fixed;
+  right: 18px;
+  bottom: 88px;
+  z-index: 2147483000;
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 52px;
+  padding: 0 18px;
+  border: 0;
+  border-radius: 999px;
+  background: #10254f;
+  color: #fff;
+  font: inherit;
+  font-size: .9rem;
+  font-weight: 900;
+  cursor: pointer;
+  box-shadow: 0 14px 34px rgba(16,37,79,.28);
+  transition: transform .2s ease, box-shadow .2s ease;
+}
+
+.cm-chat-launcher:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 18px 40px rgba(16,37,79,.34);
+}
+
+.cm-chat-launcher .cm-chat-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: #35d07f;
+  box-shadow: 0 0 0 4px rgba(53,208,127,.16);
+  flex: 0 0 auto;
+}
+
+@media (max-width: 640px) {
+  .cm-chat-launcher {
+right: 12px;
+bottom: 82px;
+min-height: 48px;
+padding: 0 14px;
+font-size: .82rem;
+  }
+}
+
 </style>
 </head>
 <body>
@@ -308,9 +410,116 @@ footer{border-top:1px solid var(--line);background:#fff;padding:24px 0;color:var
   <div class="container foot">
     <div><strong>MyPath360</strong> — Ekosistem Phygital Bimbingan Hala Tuju</div>
     <div>Meneroka Potensi, Membina Masa Depan</div>
+
+    <div class="mypath-shared-stats" aria-label="Statistik pelawat CikguMuiez">
+      <span class="stats-label">Statistik</span>
+      <span class="stats-pill">Unik <strong id="mypathUniqueVisitors">—</strong></span>
+      <span class="stats-pill">Lawatan <strong id="mypathTotalVisits">—</strong></span>
+      <span class="stats-pill">Hari ini <strong id="mypathTodayVisits">—</strong></span>
+      <span class="stats-note" id="mypathStatsNote">Statistik daripada cikgumuiez.com · paparan sahaja</span>
+    </div>
   </div>
 </footer>
 
+
+
+<script>
+(function(){
+  const SHEET_ID = '1X7jVCjHYjZbLgiJG16xNF0TA3TeP0GtFhmOWJ260l-8';
+  let uniqueCount = null;
+  let totalCount = null;
+  let todayCount = null;
+  let settled = 0;
+
+  function fmt(value){
+    const n = Number(value);
+    return Number.isFinite(n) ? n.toLocaleString('ms-MY') : '—';
+  }
+
+  function malaysiaDateKey(){
+    const parts = new Intl.DateTimeFormat('en-GB', {
+      timeZone:'Asia/Kuala_Lumpur', year:'numeric', month:'2-digit', day:'2-digit'
+    }).formatToParts(new Date());
+    const map = {};
+    parts.forEach(p => { if (p.type !== 'literal') map[p.type] = p.value; });
+    return `${map.year}-${map.month}-${map.day}`;
+  }
+
+  function firstValue(resp){
+    try {
+      return resp.table.rows[0].c[0].v;
+    } catch(e) {
+      return null;
+    }
+  }
+
+  function finishOne(){
+    settled += 1;
+    if (settled < 3) return;
+    const u = document.getElementById('mypathUniqueVisitors');
+    const t = document.getElementById('mypathTotalVisits');
+    const d = document.getElementById('mypathTodayVisits');
+    const n = document.getElementById('mypathStatsNote');
+    if (u) u.textContent = fmt(uniqueCount);
+    if (t) t.textContent = fmt(totalCount);
+    if (d) d.textContent = fmt(todayCount);
+    if (n) n.textContent = (uniqueCount !== null && totalCount !== null && todayCount !== null)
+      ? 'Statistik daripada cikgumuiez.com · lawatan MyPath360 tidak menambah kiraan.'
+      : 'Sebahagian statistik tidak dapat dimuatkan buat masa ini.';
+  }
+
+  window.__mypathUniqueStats = function(resp){ uniqueCount = firstValue(resp); finishOne(); };
+  window.__mypathTotalStats = function(resp){ totalCount = firstValue(resp); finishOne(); };
+  window.__mypathTodayStats = function(resp){ todayCount = firstValue(resp); finishOne(); };
+
+  function addQuery(sheet, query, callback){
+    const base = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq`;
+    const params = new URLSearchParams({
+      sheet: sheet,
+      headers: '1',
+      tq: query,
+      tqx: `out:json;responseHandler:${callback}`
+    });
+    const s = document.createElement('script');
+    s.src = `${base}?${params.toString()}`;
+    s.async = true;
+    s.onerror = finishOne;
+    document.body.appendChild(s);
+  }
+
+  window.addEventListener('DOMContentLoaded', function(){
+    addQuery('VISITORS', 'select count(A)', '__mypathUniqueStats');
+    addQuery('VISITS', 'select count(A)', '__mypathTotalStats');
+    addQuery('VISITS', `select count(A) where C = '${malaysiaDateKey()}'`, '__mypathTodayStats');
+  });
+})();
+</script>
+
+
+  <button class="cm-chat-launcher" type="button" onclick="openCikguMuiezChat()" aria-label="Chat dengan Cikgu Muiez">
+    <span class="cm-chat-dot" aria-hidden="true"></span>
+    <span>💬 Chat dengan Cikgu Muiez</span>
+  </button>
+
+
+  <!--Start of Tawk.to Script-->
+  <script type="text/javascript">
+  var Tawk_API=Tawk_API||{}, Tawk_LoadStart=new Date();
+  function openCikguMuiezChat(){
+    if (window.Tawk_API && typeof window.Tawk_API.maximize === 'function') {
+      window.Tawk_API.maximize();
+    }
+  }
+  (function(){
+  var s1=document.createElement("script"),s0=document.getElementsByTagName("script")[0];
+  s1.async=true;
+  s1.src='https://embed.tawk.to/6ab4ff8e894fa4344ac3f9ea/1k39gci2q';
+  s1.charset='UTF-8';
+  s1.setAttribute('crossorigin','*');
+  s0.parentNode.insertBefore(s1,s0);
+  })();
+  </script>
+  <!--End of Tawk.to Script-->
 
 </body>
 </html>
