@@ -513,6 +513,35 @@ font-size: .82rem;
     }
   }
 
+  function normalizeDateKey(value){
+    if (typeof value !== 'string') return '';
+    if (/^\d{4}-\d{2}-\d{2}$/.test(value)) return value;
+    const m = value.match(/^Date\((\d+),(\d+),(\d+)\)$/);
+    if (m) {
+      const year = m[1];
+      const month = String(Number(m[2]) + 1).padStart(2, '0');
+      const day = String(Number(m[3])).padStart(2, '0');
+      return `${year}-${month}-${day}`;
+    }
+    return '';
+  }
+
+  function countToday(resp){
+    try {
+      const key = malaysiaDateKey();
+      let count = 0;
+      const rows = (resp.table && resp.table.rows) ? resp.table.rows : [];
+      rows.forEach(row => {
+        const cell = row && row.c ? row.c[0] : null;
+        if (!cell) return;
+        if (normalizeDateKey(cell.v) === key || cell.f === key) count += 1;
+      });
+      return count;
+    } catch(e) {
+      return null;
+    }
+  }
+
   function finishOne(){
     settled += 1;
     if (settled < 3) return;
@@ -530,7 +559,7 @@ font-size: .82rem;
 
   window.__mypathUniqueStats = function(resp){ uniqueCount = firstValue(resp); finishOne(); };
   window.__mypathTotalStats = function(resp){ totalCount = firstValue(resp); finishOne(); };
-  window.__mypathTodayStats = function(resp){ todayCount = firstValue(resp); finishOne(); };
+  window.__mypathTodayStats = function(resp){ todayCount = countToday(resp); finishOne(); };
 
   function addQuery(sheet, query, callback){
     const base = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq`;
@@ -550,7 +579,7 @@ font-size: .82rem;
   window.addEventListener('DOMContentLoaded', function(){
     addQuery('VISITORS', 'select count(A)', '__mypathUniqueStats');
     addQuery('VISITS', 'select count(A)', '__mypathTotalStats');
-    addQuery('VISITS', `select count(A) where C = '${malaysiaDateKey()}'`, '__mypathTodayStats');
+    addQuery('VISITS', 'select C where C is not null', '__mypathTodayStats');
   });
 })();
 </script>
