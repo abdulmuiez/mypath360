@@ -4,6 +4,14 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>MyPath360 | Portal Hala Tuju Selepas SPM</title>
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#082f70">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="MyPath360">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+
 <style>
 :root {
   --navy:#082f70;
@@ -295,6 +303,55 @@ font-size: .82rem;
   }
 }
 
+
+
+/* PWA install controls */
+.nav-actions{display:flex;align-items:center;gap:9px}
+.install-btn{
+  display:none;
+  align-items:center;
+  justify-content:center;
+  gap:7px;
+  padding:10px 15px;
+  border:0;
+  border-radius:999px;
+  background:linear-gradient(135deg,var(--navy),var(--blue));
+  color:#fff;
+  font:inherit;
+  font-size:13px;
+  font-weight:900;
+  cursor:pointer;
+  box-shadow:0 8px 20px rgba(8,47,112,.18);
+}
+.install-btn.is-visible{display:inline-flex}
+.install-btn:hover{transform:translateY(-1px)}
+.install-btn:focus-visible{outline:3px solid rgba(7,143,234,.28);outline-offset:3px}
+.install-toast{
+  position:fixed;
+  left:50%;
+  bottom:84px;
+  z-index:1000001;
+  transform:translate(-50%,18px);
+  width:min(420px,calc(100% - 28px));
+  padding:13px 16px;
+  border-radius:15px;
+  background:#082f70;
+  color:#fff;
+  box-shadow:0 16px 42px rgba(8,47,112,.28);
+  font-size:.9rem;
+  line-height:1.45;
+  opacity:0;
+  pointer-events:none;
+  transition:.2s ease;
+  text-align:center;
+}
+.install-toast.show{opacity:1;transform:translate(-50%,0)}
+@media (max-width:640px){
+  .nav{gap:10px}
+  .nav-actions{gap:6px}
+  .install-btn{padding:9px 12px;font-size:.78rem}
+}
+
 </style>
 </head>
 <body>
@@ -305,7 +362,10 @@ font-size: .82rem;
       <div class="brand-icon">360°</div>
       <div>MyPath360<small>Portal Hala Tuju Selepas SPM</small></div>
     </a>
-    <a href="#pilihan" class="top-btn">Teroka MyPath360</a>
+    <div class="nav-actions">
+      <a href="#pilihan" class="top-btn">Teroka MyPath360</a>
+      <button id="installAppBtn" class="install-btn" type="button" aria-label="Pasang aplikasi MyPath360">📲 Pasang App</button>
+    </div>
   </div>
 </header>
 
@@ -580,6 +640,78 @@ font-size: .82rem;
   })();
   </script>
   <!--End of Tawk.to Script-->
+
+
+  <div id="installToast" class="install-toast" role="status" aria-live="polite"></div>
+
+  <script>
+  (function(){
+    var deferredInstallPrompt = null;
+    var installBtn = document.getElementById('installAppBtn');
+    var toast = document.getElementById('installToast');
+
+    function isStandalone(){
+      return window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
+    }
+
+    function isIOS(){
+      return /iphone|ipad|ipod/i.test(navigator.userAgent);
+    }
+
+    function showToast(message, duration){
+      if (!toast) return;
+      toast.textContent = message;
+      toast.classList.add('show');
+      window.clearTimeout(showToast._timer);
+      showToast._timer = window.setTimeout(function(){ toast.classList.remove('show'); }, duration || 5000);
+    }
+
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', function(){
+        navigator.serviceWorker.register('./service-worker.js').catch(function(err){
+          console.warn('MyPath360 service worker tidak dapat didaftarkan:', err);
+        });
+      });
+    }
+
+    window.addEventListener('beforeinstallprompt', function(event){
+      event.preventDefault();
+      deferredInstallPrompt = event;
+      if (installBtn && !isStandalone()) installBtn.classList.add('is-visible');
+    });
+
+    window.addEventListener('appinstalled', function(){
+      deferredInstallPrompt = null;
+      if (installBtn) installBtn.classList.remove('is-visible');
+      showToast('MyPath360 berjaya dipasang pada peranti ini.', 3500);
+    });
+
+    if (installBtn) {
+      if (isIOS() && !isStandalone()) installBtn.classList.add('is-visible');
+
+      installBtn.addEventListener('click', async function(){
+        if (isStandalone()) {
+          showToast('MyPath360 sudah dipasang pada peranti ini.', 3000);
+          return;
+        }
+
+        if (deferredInstallPrompt) {
+          deferredInstallPrompt.prompt();
+          try { await deferredInstallPrompt.userChoice; } catch(e) {}
+          deferredInstallPrompt = null;
+          installBtn.classList.remove('is-visible');
+          return;
+        }
+
+        if (isIOS()) {
+          showToast('iPhone/iPad: buka menu Share di Safari, kemudian pilih “Add to Home Screen”.', 7000);
+        } else {
+          showToast('Jika butang pemasangan belum tersedia, buka menu pelayar dan pilih “Install app” atau “Add to Home screen”.', 6500);
+        }
+      });
+    }
+  })();
+  </script>
 
 </body>
 </html>
