@@ -252,7 +252,7 @@ footer{border-top:1px solid var(--line);background:#fff;padding:24px 0;color:var
 .cm-chat-launcher {
   position: fixed;
   right: 18px;
-  bottom: 88px;
+  bottom: 20px;
   z-index: 2147483000;
   display: inline-flex;
   align-items: center;
@@ -288,7 +288,7 @@ footer{border-top:1px solid var(--line);background:#fff;padding:24px 0;color:var
 @media (max-width: 640px) {
   .cm-chat-launcher {
 right: 12px;
-bottom: 82px;
+bottom: 16px;
 min-height: 48px;
 padding: 0 14px;
 font-size: .82rem;
@@ -496,7 +496,7 @@ font-size: .82rem;
 </script>
 
 
-  <button class="cm-chat-launcher" type="button" onclick="openCikguMuiezChat()" aria-label="Chat dengan Cikgu Muiez">
+  <button id="cmChatLauncher" class="cm-chat-launcher" type="button" onclick="openCikguMuiezChat()" aria-label="Chat dengan Cikgu Muiez">
     <span class="cm-chat-dot" aria-hidden="true"></span>
     <span>💬 Chat dengan Cikgu Muiez</span>
   </button>
@@ -505,9 +505,69 @@ font-size: .82rem;
   <!--Start of Tawk.to Script-->
   <script type="text/javascript">
   var Tawk_API=Tawk_API||{}, Tawk_LoadStart=new Date();
-  function openCikguMuiezChat(){
-    if (window.Tawk_API && typeof window.Tawk_API.maximize === 'function') {
-      window.Tawk_API.maximize();
+  var cmChatReady = false;
+  var cmChatOpening = false;
+
+  function cmSetLauncherVisible(visible){
+    var launcher = document.getElementById('cmChatLauncher');
+    if (!launcher) return;
+    launcher.style.setProperty('display', visible ? 'inline-flex' : 'none', 'important');
+    launcher.setAttribute('aria-hidden', visible ? 'false' : 'true');
+  }
+
+  function cmHideNativeWidget(){
+    if (window.Tawk_API && typeof window.Tawk_API.hideWidget === 'function') {
+      window.Tawk_API.hideWidget();
+    }
+  }
+
+  Tawk_API.onBeforeLoad = function(){
+    cmHideNativeWidget();
+  };
+
+  Tawk_API.onLoad = function(){
+    cmChatReady = true;
+    cmHideNativeWidget();
+    if (!cmChatOpening) cmSetLauncherVisible(true);
+  };
+
+  Tawk_API.onChatMaximized = function(){
+    cmChatOpening = false;
+    cmSetLauncherVisible(false);
+  };
+
+  Tawk_API.onChatMinimized = function(){
+    cmChatOpening = false;
+    cmSetLauncherVisible(false);
+    setTimeout(function(){
+      cmHideNativeWidget();
+      cmSetLauncherVisible(true);
+    }, 120);
+  };
+
+  Tawk_API.onChatHidden = function(){
+    cmChatOpening = false;
+    cmSetLauncherVisible(true);
+  };
+
+  function openCikguMuiezChat(attempt){
+    attempt = attempt || 0;
+    cmChatOpening = true;
+    cmSetLauncherVisible(false);
+
+    if (window.Tawk_API && typeof window.Tawk_API.showWidget === 'function' && typeof window.Tawk_API.maximize === 'function') {
+      window.Tawk_API.showWidget();
+      setTimeout(function(){
+        window.Tawk_API.maximize();
+      }, 120);
+      return;
+    }
+
+    if (attempt < 50) {
+      setTimeout(function(){ openCikguMuiezChat(attempt + 1); }, 100);
+    } else {
+      cmChatOpening = false;
+      cmSetLauncherVisible(true);
     }
   }
   (function(){
