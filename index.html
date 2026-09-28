@@ -485,102 +485,54 @@ font-size: .82rem;
 
 <script>
 (function(){
-  const SHEET_ID = '1X7jVCjHYjZbLgiJG16xNF0TA3TeP0GtFhmOWJ260l-8';
-  let uniqueCount = null;
-  let totalCount = null;
-  let todayCount = null;
-  let settled = 0;
+  const VISITOR_STATS_API = "https://script.google.com/macros/s/AKfycbyO3qETmivNq2_6P3Qcp5a5HvqKNocb-MVSIHVEoqytSEqf3GgG6GXmHqdg9Psliw_U/exec";
+
+  function getPortalVisitorId() {
+    const key = "cikgumuiezPortalVisitorId";
+    let id = localStorage.getItem(key);
+    if (!id) {
+      const randomPart = (window.crypto && crypto.randomUUID)
+        ? crypto.randomUUID()
+        : `${Date.now()}-${Math.random().toString(36).slice(2)}-${Math.random().toString(36).slice(2)}`;
+      id = `CM-${randomPart}`;
+      localStorage.setItem(key, id);
+    }
+    return id;
+  }
 
   function fmt(value){
     const n = Number(value);
     return Number.isFinite(n) ? n.toLocaleString('ms-MY') : '—';
   }
 
-  function malaysiaDateKey(){
-    const parts = new Intl.DateTimeFormat('en-GB', {
-      timeZone:'Asia/Kuala_Lumpur', year:'numeric', month:'2-digit', day:'2-digit'
-    }).formatToParts(new Date());
-    const map = {};
-    parts.forEach(p => { if (p.type !== 'literal') map[p.type] = p.value; });
-    return `${map.year}-${map.month}-${map.day}`;
-  }
-
-  function firstValue(resp){
-    try {
-      return resp.table.rows[0].c[0].v;
-    } catch(e) {
-      return null;
-    }
-  }
-
-  function normalizeDateKey(value){
-    if (typeof value !== 'string') return '';
-    if (/^\d{4}-\d{2}-\d{2}$/.test(value)) return value;
-    const m = value.match(/^Date\((\d+),(\d+),(\d+)\)$/);
-    if (m) {
-      const year = m[1];
-      const month = String(Number(m[2]) + 1).padStart(2, '0');
-      const day = String(Number(m[3])).padStart(2, '0');
-      return `${year}-${month}-${day}`;
-    }
-    return '';
-  }
-
-  function countToday(resp){
-    try {
-      const key = malaysiaDateKey();
-      let count = 0;
-      const rows = (resp.table && resp.table.rows) ? resp.table.rows : [];
-      rows.forEach(row => {
-        const cell = row && row.c ? row.c[0] : null;
-        if (!cell) return;
-        if (normalizeDateKey(cell.v) === key || cell.f === key) count += 1;
-      });
-      return count;
-    } catch(e) {
-      return null;
-    }
-  }
-
-  function finishOne(){
-    settled += 1;
-    if (settled < 3) return;
+  async function recordAndLoadVisitorStats(){
     const u = document.getElementById('mypathUniqueVisitors');
     const t = document.getElementById('mypathTotalVisits');
     const d = document.getElementById('mypathTodayVisits');
     const n = document.getElementById('mypathStatsNote');
-    if (u) u.textContent = fmt(uniqueCount);
-    if (t) t.textContent = fmt(totalCount);
-    if (d) d.textContent = fmt(todayCount);
-    if (n) n.textContent = (uniqueCount !== null && totalCount !== null && todayCount !== null)
-      ? 'Statistik daripada cikgumuiez.com · lawatan MyPath360 tidak menambah kiraan.'
-      : 'Sebahagian statistik tidak dapat dimuatkan buat masa ini.';
+    if (!u || !t || !d || !n) return;
+
+    try {
+      const visitorId = encodeURIComponent(getPortalVisitorId());
+      const response = await fetch(`${VISITOR_STATS_API}?action=visit&visitorId=${visitorId}&t=${Date.now()}`, {
+        method: 'GET',
+        cache: 'no-store'
+      });
+      if (!response.ok) throw new Error(`HTTP ${response.status}`);
+      const data = await response.json();
+      if (!data || data.ok !== true) throw new Error((data && data.error) || 'Respons statistik tidak sah');
+
+      u.textContent = fmt(data.uniqueVisitors);
+      t.textContent = fmt(data.totalVisits);
+      d.textContent = fmt(data.todayVisits);
+      n.textContent = 'Statistik gabungan cikgumuiez.com & MyPath360 · lawatan halaman ini telah direkodkan.';
+    } catch (error) {
+      console.warn('Statistik pelawat MyPath360 tidak dapat direkodkan:', error);
+      n.textContent = 'Statistik tidak dapat dimuatkan buat masa ini.';
+    }
   }
 
-  window.__mypathUniqueStats = function(resp){ uniqueCount = firstValue(resp); finishOne(); };
-  window.__mypathTotalStats = function(resp){ totalCount = firstValue(resp); finishOne(); };
-  window.__mypathTodayStats = function(resp){ todayCount = countToday(resp); finishOne(); };
-
-  function addQuery(sheet, query, callback){
-    const base = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq`;
-    const params = new URLSearchParams({
-      sheet: sheet,
-      headers: '1',
-      tq: query,
-      tqx: `out:json;responseHandler:${callback}`
-    });
-    const s = document.createElement('script');
-    s.src = `${base}?${params.toString()}`;
-    s.async = true;
-    s.onerror = finishOne;
-    document.body.appendChild(s);
-  }
-
-  window.addEventListener('DOMContentLoaded', function(){
-    addQuery('VISITORS', 'select count(A)', '__mypathUniqueStats');
-    addQuery('VISITS', 'select count(A)', '__mypathTotalStats');
-    addQuery('VISITS', 'select C where C is not null', '__mypathTodayStats');
-  });
+  window.addEventListener('DOMContentLoaded', recordAndLoadVisitorStats);
 })();
 </script>
 
